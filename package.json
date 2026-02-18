@@ -1,5 +1,9 @@
 {
-  "main": "index.ts",
+  "main": "build/index.js",
+  "repository": "https://github.com/KL0maboi/KL0_Discord_Bot",
+  "author": "KL0maboi",
+  "private": true,
+  "license": "MIT",
   "scripts": {
     "register": "ts-node registerCommands.ts",
     "build": "npx tsc",
