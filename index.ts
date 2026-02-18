@@ -1,3 +1,4 @@
+import "./server";
 import KClient from "./src/lib/KClient";
 import { config } from "dotenv";
 config();

@@ -16,7 +16,13 @@ class KClient extends Client {
   commands = new Collection<string, KCommand>();
 
   constructor() {
-    super({ intents: [IntentsBitField.Flags.Guilds] });
+    super({
+      intents: [
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.MessageContent,
+      ],
+    });
 
     this.loadEvents();
     this.loadCommands();
