@@ -2,6 +2,8 @@
   "main": "index.ts",
   "scripts": {
     "register": "ts-node registerCommands.ts",
+    "build": "npx tsc",
+    "start": "node .",
     "dev": "nodemon index.ts"
   },
   "dependencies": {
