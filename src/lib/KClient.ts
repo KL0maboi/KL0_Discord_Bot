@@ -29,9 +29,7 @@ class KClient extends Client {
   }
 
   loadEvents() {
-    const eventFiles = readdirSync(join(__dirname, "../events")).filter(
-      (file) => file.endsWith(".ts"),
-    );
+    const eventFiles = readdirSync(join(__dirname, "../events"));
 
     for (const file of eventFiles) {
       const event: KEventHandle<keyof ClientEvents> = require(
