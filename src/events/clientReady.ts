@@ -6,7 +6,5 @@ export default {
   once: true,
   async execute(client) {
     console.log(`Logged in as ${client.user?.username}!`);
-
-    client.user?.setStatus(PresenceUpdateStatus.Invisible);
   },
 } as KEventHandle<"clientReady">;

@@ -1,4 +1,4 @@
-import { ChannelType, TextChannel } from "discord.js";
+import { ChannelType, EmbedBuilder, TextChannel } from "discord.js";
 import { KEventHandle } from "../lib/KClient";
 
 export default {
@@ -27,12 +27,20 @@ export default {
       });
     }
 
-    if (logChannel.isSendable())
+    if (logChannel.isSendable()) {
+      const embed = new EmbedBuilder()
+        .setAuthor({
+          name: msg.author.tag,
+          iconURL: msg.author.displayAvatarURL(),
+        })
+        .setDescription(msg.content || " ");
+
       logChannel.send({
-        content: `${msg.author.tag}: ${msg.content}`,
-        embeds: msg.embeds,
+        content: "dev",
+        embeds: [embed, ...msg.embeds.map((e) => EmbedBuilder.from(e))],
         files: msg.attachments.map((a) => a.url),
         components: msg.components,
       });
+    }
   },
 } as KEventHandle<"messageCreate">;

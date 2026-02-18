@@ -17,6 +17,9 @@ class KClient extends Client {
 
   constructor() {
     super({
+      presence: {
+        status: "invisible",
+      },
       intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
