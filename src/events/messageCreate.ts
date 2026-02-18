@@ -36,7 +36,6 @@ export default {
         .setDescription(msg.content || " ");
 
       logChannel.send({
-        content: "dev",
         embeds: [embed, ...msg.embeds.map((e) => EmbedBuilder.from(e))],
         files: msg.attachments.map((a) => a.url),
         components: msg.components,
