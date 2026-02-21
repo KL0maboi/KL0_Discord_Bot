@@ -4,16 +4,19 @@ import {
   Client,
   ClientEvents,
   Collection,
+  ContextMenuCommandBuilder,
+  ContextMenuCommandInteraction,
   IntentsBitField,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { Context } from "node:vm";
 
 class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
-  commands = new Collection<string, KCommand>();
+  commands = new Collection<string, KCommand<keyof CommandType>>();
 
   constructor() {
     super({
@@ -57,8 +60,17 @@ class KClient extends Client {
 
       for (const command of commands) {
         const cmdPath = join(dirPath, command);
-        const cmdData: KCommand = require(cmdPath).default;
-        this.commands.set(cmdData.data.name, cmdData);
+        const cmdData: KCommand<keyof CommandType> = require(cmdPath).default;
+
+        const data = cmdData.data;
+
+        if (Array.isArray(data)) {
+          for (const d of data) {
+            this.commands.set(d.name, cmdData);
+          }
+        } else {
+          this.commands.set(data.name, cmdData);
+        }
       }
     }
   }
@@ -73,12 +85,20 @@ export type KEventHandle<Event extends keyof ClientEvents> = {
   ) => Promise<void> | void;
 };
 
-export type KCommand = {
-  data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
+interface CommandType {
+  chatInput: ChatInputCommandInteraction;
+  contextMenu: ContextMenuCommandInteraction;
+}
+
+export type KCommand<Type extends keyof CommandType> = {
+  data:
+    | SlashCommandBuilder
+    | ContextMenuCommandBuilder
+    | [SlashCommandBuilder | ContextMenuCommandBuilder];
 
   execute(
     client: KClient,
-    interaction: ChatInputCommandInteraction,
+    interaction: CommandType[Type],
   ): void | Promise<void>;
 
   autocomplete?(

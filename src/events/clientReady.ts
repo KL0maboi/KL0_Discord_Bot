@@ -1,4 +1,3 @@
-import { PresenceUpdateStatus } from "discord.js";
 import { KEventHandle } from "../lib/KClient";
 
 export default {

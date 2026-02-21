@@ -14,8 +14,18 @@ client.once("ready", async () => {
   try {
     console.log("Started refreshing application (/) commands.");
 
+    const body = [];
+
+    for (let i of client.commands.values()) {
+      if (Array.isArray(i.data)) {
+        for (let c of i.data) {
+          body.push(c.toJSON());
+        }
+      } else body.push(i.data.toJSON());
+    }
+
     await rest.put(Routes.applicationCommands(client.user?.id || ""), {
-      body: client.commands.mapValues((v) => v.data.toJSON()),
+      body,
     });
 
     console.log("Successfully reloaded application (/) commands.");
