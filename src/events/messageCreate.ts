@@ -4,9 +4,9 @@ import { KEventHandle } from "../lib/KClient";
 export default {
   name: "messageCreate",
   async execute(client, msg) {
-    if (msg.guildId !== process.env.GUILD_ID) return;
+    if (msg.guildId !== process.env.GUILD_ID || process.env.DEVENV === "true")
+      return;
 
-    const guild = await client.guilds.fetch(process.env.GUILD_ID!);
     const logGuild = await client.guilds.fetch(process.env.LOG_GUILD_ID!);
 
     logGuild.channels.fetch();

@@ -8,11 +8,9 @@ import {
   ContextMenuCommandInteraction,
   IntentsBitField,
   SlashCommandBuilder,
-  SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { Context } from "node:vm";
 
 class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
