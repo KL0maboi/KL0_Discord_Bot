@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
-  commands = new Collection<string, KCommand<keyof CommandType>>();
+  commands = new Collection<string, KCommand<keyof KCommandDataType>>();
 
   constructor() {
     super({
@@ -58,7 +58,7 @@ class KClient extends Client {
 
       for (const command of commands) {
         const cmdPath = join(dirPath, command);
-        const cmdData: KCommand<keyof CommandType> = require(cmdPath).default;
+        const cmdData: KCommand<keyof KCommandType> = require(cmdPath).default;
 
         const data = cmdData.data;
 
@@ -83,24 +83,24 @@ export type KEventHandle<Event extends keyof ClientEvents> = {
   ) => Promise<void> | void;
 };
 
-interface CommandType {
+interface KCommandType {
   chatInput: ChatInputCommandInteraction;
   contextMenu: ContextMenuCommandInteraction;
   both: ChatInputCommandInteraction | ContextMenuCommandInteraction;
 }
 
-interface CommandDataType {
+interface KCommandDataType {
   chatInput: SlashCommandBuilder;
   contextMenu: ContextMenuCommandBuilder;
   both: [SlashCommandBuilder, ContextMenuCommandBuilder];
 }
 
-export type KCommand<Type extends keyof CommandType> = {
-  data: CommandDataType[Type];
+export type KCommand<Type extends keyof KCommandType> = {
+  data: KCommandDataType[Type];
 
   execute(
     client: KClient,
-    interaction: CommandType[Type],
+    interaction: KCommandType[Type],
   ): void | Promise<void>;
 
   autocomplete?(

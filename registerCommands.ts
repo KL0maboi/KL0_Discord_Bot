@@ -1,37 +1,48 @@
-import { REST, Routes } from "discord.js";
+import {
+  Collection,
+  ContextMenuCommandBuilder,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+} from "discord.js";
 import KClient from "./src/lib/KClient";
 import { config } from "dotenv";
 config();
 
-const TOKEN = process.env.TOKEN;
+const TOKEN = process.env.TOKEN || "";
+const CLIENT_ID = process.env.CLIENT_ID || "";
 
 const client = new KClient();
-client.login(TOKEN);
 
-client.once("ready", async () => {
-  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN || "");
+(async () => {
+  const rest = new REST({ version: "10" }).setToken(TOKEN);
 
   try {
     console.log("Started refreshing application (/) commands.");
 
-    const body = [];
+    const body = new Collection<
+      string,
+      SlashCommandBuilder | ContextMenuCommandBuilder
+    >();
 
     for (let i of client.commands.values()) {
-      if (Array.isArray(i.data)) {
-        for (let c of i.data) {
-          body.push(c.toJSON());
+      const data = i.data;
+
+      if (Array.isArray(data)) {
+        for (const d of data) {
+          body.set(d.name, d);
         }
-      } else body.push(i.data.toJSON());
+      } else {
+        body.set(data.name, data);
+      }
     }
 
-    await rest.put(Routes.applicationCommands(client.user?.id || ""), {
-      body,
+    await rest.put(Routes.applicationCommands(CLIENT_ID), {
+      body: [...body.values()],
     });
 
     console.log("Successfully reloaded application (/) commands.");
   } catch (error) {
     console.error(error);
   }
-
-  client.destroy();
-});
+})();
