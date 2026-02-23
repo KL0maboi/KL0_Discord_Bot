@@ -86,13 +86,17 @@ export type KEventHandle<Event extends keyof ClientEvents> = {
 interface CommandType {
   chatInput: ChatInputCommandInteraction;
   contextMenu: ContextMenuCommandInteraction;
+  both: ChatInputCommandInteraction | ContextMenuCommandInteraction;
+}
+
+interface CommandDataType {
+  chatInput: SlashCommandBuilder;
+  contextMenu: ContextMenuCommandBuilder;
+  both: [SlashCommandBuilder, ContextMenuCommandBuilder];
 }
 
 export type KCommand<Type extends keyof CommandType> = {
-  data:
-    | SlashCommandBuilder
-    | ContextMenuCommandBuilder
-    | [SlashCommandBuilder | ContextMenuCommandBuilder];
+  data: CommandDataType[Type];
 
   execute(
     client: KClient,
@@ -103,6 +107,8 @@ export type KCommand<Type extends keyof CommandType> = {
     client: KClient,
     interaction: AutocompleteInteraction,
   ): void | Promise<void>;
+
+  dev: boolean;
 };
 
 export default KClient;
