@@ -17,7 +17,6 @@ export default {
           flags: [MessageFlagsBitField.Flags.Ephemeral],
         });
 
-      if (!command.dev && process.env.DEVENV == "true") return;
       if (command.dev && !(interaction.user.id in ["579605422521188363"])) {
         return interaction.reply({
           content:
@@ -25,6 +24,7 @@ export default {
           flags: [MessageFlagsBitField.Flags.Ephemeral],
         });
       }
+      if (!command.dev != !process.env.DEVENV) return;
 
       try {
         command.execute(client, interaction);
