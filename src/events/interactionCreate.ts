@@ -10,12 +10,7 @@ export default {
     ) {
       const command = client.commands.get(interaction.commandName);
 
-      if (!command)
-        return interaction.reply({
-          content:
-            "The command seems to be missing from the source directory...",
-          flags: [MessageFlagsBitField.Flags.Ephemeral],
-        });
+      if (!command) return;
 
       if (command.dev && !(interaction.user.id in ["579605422521188363"])) {
         return interaction.reply({
