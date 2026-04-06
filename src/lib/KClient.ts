@@ -1,4 +1,3 @@
-import { FeatureExtractionPipeline } from "@xenova/transformers";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
@@ -12,13 +11,10 @@ import {
 } from "discord.js";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { pipeline } from "@xenova/transformers";
 
 class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
   commands = new Collection<string, KCommand<keyof KCommandDataType>>();
-  textEmbedder: FeatureExtractionPipeline | undefined = undefined;
-  lastAdminRequestedAt: Collection<string, number> = new Collection();
 
   constructor() {
     super({
@@ -28,19 +24,9 @@ class KClient extends Client {
       intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.MessageContent,
-        IntentsBitField.Flags.GuildInvites,
-        IntentsBitField.Flags.GuildVoiceStates,
       ],
     });
-
-    (async () => {
-      this.textEmbedder = await pipeline(
-        "feature-extraction",
-        "Xenova/paraphrase-multilingual-MiniLM-L12-v2",
-      );
-    })();
 
     this.loadEvents();
     this.loadCommands();
@@ -112,12 +98,15 @@ interface KCommandDataType {
 export type KCommand<Type extends keyof KCommandType> = {
   data: KCommandDataType[Type];
 
-  execute(client: KClient, interaction: KCommandType[Type]): any | Promise<any>;
+  execute(
+    client: KClient,
+    interaction: KCommandType[Type],
+  ): void | Promise<void>;
 
   autocomplete?(
     client: KClient,
     interaction: AutocompleteInteraction,
-  ): any | Promise<any>;
+  ): void | Promise<void>;
 
   dev: boolean;
 };
