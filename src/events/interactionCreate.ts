@@ -12,7 +12,7 @@ export default {
 
       if (!command) return;
 
-      if (command.dev && !(interaction.user.id in ["579605422521188363"])) {
+      if (command.dev && interaction.user.id !== "579605422521188363") {
         return interaction.reply({
           content:
             "This command is currently in development and cannot be used by non-devuser.",

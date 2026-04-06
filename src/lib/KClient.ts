@@ -15,6 +15,7 @@ import { join } from "node:path";
 class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
   commands = new Collection<string, KCommand<keyof KCommandDataType>>();
+  lastAdminRequestedAt: Collection<string, number> = new Collection();
 
   constructor() {
     super({
