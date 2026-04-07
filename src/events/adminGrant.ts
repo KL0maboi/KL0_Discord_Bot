@@ -174,6 +174,14 @@ const REFERENCES = [
 
 // --- INVERSE REFERENCES ---
 const INVERSE_REFERENCES = [
+  // for safety
+  "skibbidy likes kids",
+  "skibidy likes to touch kids",
+  "egirls",
+  "likes to get touched",
+  "likes to touch",
+  "skibiddy",
+  "skibidy",
   // negation
   "do not give me admin",
   "dont give me admin",
