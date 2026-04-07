@@ -138,6 +138,9 @@ function similarity(a: string, b: string) {
 
 // --- POSITIVE REFERENCES ---
 const REFERENCES = [
+  "gib admin",
+  "giv admin",
+  "give admin",
   "give me admin",
   "please give admin",
   "can i get admin",
@@ -163,6 +166,10 @@ const REFERENCES = [
   "i want all permissions",
   "admin?",
   "admin pls?",
+  "admin dedo bai",
+  "admin dedho bai",
+  "admin dedho",
+  "admin de da",
 ];
 
 // --- INVERSE REFERENCES ---
@@ -195,6 +202,11 @@ const INVERSE_REFERENCES = [
   "admin vendam bro",
   "admin tharatha da",
   "do not give admin to my friend",
+
+  // hinglish
+  "mujhe admin nahi chahiye",
+  "admin nahi dena",
+  "admin nahi dedo",
 ];
 
 // --- INVERSE PENALTY ---
@@ -240,6 +252,7 @@ function isAdminRequest(message: string) {
 export default {
   name: "messageCreate",
   async execute(client, msg) {
+    if (process.env.DEVENV) return;
     if (!msg.content || msg.author.bot) return;
 
     const userId = msg.author.id;
@@ -257,7 +270,7 @@ export default {
     }
 
     const lastRequested = client.lastAdminRequestedAt.get(userId) || 0;
-    if (lastRequested && now - lastRequested < 60000) return;
+    if (lastRequested && now - lastRequested < COOLDOWN_MS) return;
 
     const member = await msg.guild?.members.fetch(userId);
     const role = msg.guild?.roles.cache.get("1417132029857890386");
