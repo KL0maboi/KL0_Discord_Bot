@@ -1,53 +1,239 @@
 import { KEventHandle } from "../lib/KClient";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({
-  model: "gemini-3-flash-preview",
-});
-
-// --- cooldown ---
 const COOLDOWN_MS = 10 * 60 * 1000;
 
-async function detectAdminLLM(text: string): Promise<number> {
-  const prompt = `
-You are a classifier.
+// --- ONLINE IDF STORAGE ---
+const df = new Map<string, number>();
+let totalDocs = 1;
 
-Task: Determine if the message is asking for admin role in a discord server.
+const MIN_IDF = 0.3;
+const MAX_IDF = 3.0;
 
-Return either 0 or 1 ONLY where 1 means the message is asking for admin role and 0 means it is not.
+// important word boost
+const BOOST: Record<string, number> = {
+  admin: 2,
+};
 
-this user is speaking casually and may use slang. Here are some examples of messages and their scores:
-they may also use some other language (mainly tamil) in english letters, so be mindful of that as well. But if the message is not asking for admin role, even if it contains the word "admin", it should be scored 0.
-
-Examples of them asking admin:
-please give me admin
-admin pls
-pls admin
-admin me
-give me admin
-admin kudu please
-admin kudu da
-amdmin kudra
-admin please daddy
-daddy please admin
-admin venum
-admin tha
-
-it is also possible for user to ask indirectly so be mindful.
-
-note u only need to detect if the user is asking for admin role himself no need to check if he is asking for someone else.
-
-Message: "${text}"
-Answer:
-`;
-
-  const result = await model.generateContent(prompt);
-  const score = +result.response.text();
-
-  return score;
+// --- NORMALIZATION ---
+function normalize(text: string) {
+  return text
+    .toLowerCase()
+    .replaceAll(/\b\w*admn|admim|amin\w*\b/g, "admin")
+    .replaceAll(/pls|plz/g, "please")
+    .replaceAll(/\bdont\b/g, "do not")
+    .replaceAll(/[^a-z\s]/g, "")
+    .replaceAll("kudu", "give")
+    .replaceAll("kudunga", "give")
+    .replaceAll("thaa", "give")
+    .replaceAll("venum", "need")
+    .replaceAll("vendam", "no")
+    .trim();
 }
 
+// --- TOKENIZE ---
+function tokenize(text: string) {
+  return normalize(text).split(/\s+/);
+}
+
+// --- UPDATE DF ---
+function updateDF(tokens: string[]) {
+  totalDocs++;
+
+  const unique = new Set(tokens);
+
+  for (const word of unique) {
+    df.set(word, (df.get(word) || 0) + 1);
+  }
+
+  // decay
+  if (totalDocs % 1000 === 0) {
+    totalDocs = Math.floor(totalDocs / 2);
+
+    for (const [word, count] of df) {
+      df.set(word, Math.floor(count / 2));
+    }
+  }
+}
+
+// --- IDF ---
+function getIDF(word: string) {
+  const freq = df.get(word) || 0;
+
+  let idf = Math.log(totalDocs / (1 + freq));
+
+  if (idf < MIN_IDF) idf = MIN_IDF;
+  if (idf > MAX_IDF) idf = MAX_IDF;
+
+  if (BOOST[word]) idf *= BOOST[word];
+
+  return idf;
+}
+
+// --- LEVENSHTEIN ---
+function levenshtein(a: string, b: string) {
+  const dp = Array(a.length + 1)
+    .fill(null)
+    .map(() => Array(b.length + 1).fill(0));
+
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost,
+      );
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+// --- WORD SIM ---
+function wordSim(a: string, b: string) {
+  if (a === b) return 1;
+  const dist = levenshtein(a, b);
+  return 1 - dist / Math.max(a.length, b.length);
+}
+
+// --- MAX SIM ---
+function maxSim(word: string, tokens: string[]) {
+  let max = 0;
+
+  for (const t of tokens) {
+    const sim = wordSim(word, t);
+    if (sim > max) max = sim;
+  }
+
+  return max;
+}
+
+// --- SIMILARITY ---
+function similarity(a: string, b: string) {
+  const t1 = tokenize(a);
+  const t2 = tokenize(b);
+
+  function dirSim(src: string[], tgt: string[]) {
+    let num = 0;
+    let denom = 0;
+
+    for (const w of src) {
+      const idf = getIDF(w);
+      const sim = maxSim(w, tgt);
+
+      num += sim * idf;
+      denom += idf;
+    }
+
+    return denom === 0 ? 0 : num / denom;
+  }
+
+  return 0.5 * (dirSim(t1, t2) + dirSim(t2, t1));
+}
+
+// --- POSITIVE REFERENCES ---
+const REFERENCES = [
+  "give me admin",
+  "please give admin",
+  "can i get admin",
+  "i need admin access",
+  "make me admin",
+  "grant me admin",
+  "admin role please",
+  "gimme admin",
+  "admin kudu",
+  "admin venum",
+  "admin kudunga",
+  "enaku admin venum",
+  "bro admin kudu",
+  "admin venum bro",
+  "admin role kudunga",
+  "admin access venum",
+  "pls admin kudu",
+  "give admin da",
+  "admin venum pls",
+  "give me full access",
+  "i want all permissions",
+  "admin?",
+  "admin pls?",
+];
+
+// --- INVERSE REFERENCES ---
+const INVERSE_REFERENCES = [
+  // negation
+  "do not give me admin",
+  "dont give me admin",
+  "no admin for me",
+  "i dont want admin",
+  "never give me admin",
+  "admin not needed",
+  "i dont need admin",
+  "no admin pls",
+
+  // giving others
+  "give him admin",
+  "give her admin",
+  "give them admin",
+  "give my friend admin",
+  "give admin to him",
+  "give admin to her",
+  "give admin to them",
+
+  // tamil / tanglish
+  "enaku admin vendam",
+  "avanukku admin kudu",
+  "avanga admin venum",
+  "friend ku admin kudu",
+  "avanukku admin kudunga",
+  "admin vendam bro",
+  "admin tharatha da",
+  "do not give admin to my friend",
+];
+
+// --- INVERSE PENALTY ---
+function inversePenalty(message: string) {
+  let best = 0;
+
+  for (const ref of INVERSE_REFERENCES) {
+    const score = similarity(message, ref);
+    if (score > best) best = score;
+  }
+
+  if (best > 0.9) {
+    return best * 0.8;
+  }
+
+  return 0;
+}
+
+// --- DETECTOR ---
+function isAdminRequest(message: string) {
+  const text = normalize(message);
+
+  let best = 0;
+
+  for (const ref of REFERENCES) {
+    const score = similarity(text, ref);
+    if (score > best) best = score;
+  }
+
+  const penalty = inversePenalty(text);
+  const finalScore = best - penalty;
+
+  console.log({
+    main: best,
+    penalty,
+    final: finalScore,
+  });
+
+  return finalScore > 0.7;
+}
+
+// --- EVENT ---
 export default {
   name: "messageCreate",
   async execute(client, msg) {
@@ -56,28 +242,17 @@ export default {
     const userId = msg.author.id;
     const now = Date.now();
 
-    const last = client.lastAdminRequestedAt.get(userId);
-    if (last && now - last < COOLDOWN_MS) return;
+    const tokens = tokenize(msg.content);
+    updateDF(tokens);
 
-    const score = await detectAdminLLM(msg.content);
+    if (!isAdminRequest(msg.content)) return;
 
-    if (score) {
-      // check if user has the admin role
-      const member = await msg.guild?.members.fetch(userId);
-      const adminRole = msg.guild?.roles.cache.find(
-        (r) => r.id == "1417132029857890386",
-      );
+    client.lastAdminRequestedAt.set(userId, now);
 
-      if (member?.roles.cache.has(adminRole!.id)) {
-        msg.reply("You already have the admin role faggot");
-        return;
-      } else {
-        msg.reply("i gave u admin, i cant give it to u again for next 10 mins");
-        member?.roles.add(adminRole!);
-        client.lastAdminRequestedAt.set(userId, now);
-      }
+    await msg.reply({
+      content: "🚫 Please do not ask for admin role.",
+    });
 
-      // msg.reply("⚠️ Please do not request admin roles.");
-    }
+    console.log(`[ADMIN REQUEST DETECTED] ${msg.author.tag}: ${msg.content}`);
   },
 } as KEventHandle<"messageCreate">;
