@@ -1,3 +1,4 @@
+import { MessageFlags } from "discord.js";
 import { KEventHandle } from "../lib/KClient";
 
 const COOLDOWN_MS = 10 * 60 * 1000;
@@ -148,6 +149,8 @@ const REFERENCES = [
   "admin kudu",
   "admin venum",
   "admin kudunga",
+  "admin tha da",
+  "dei admin tha da pls",
   "enaku admin venum",
   "bro admin kudu",
   "admin venum bro",
@@ -245,13 +248,34 @@ export default {
     const tokens = tokenize(msg.content);
     updateDF(tokens);
 
+    {
+      const channel = client.channels.cache.get("1491092674931986493");
+      channel?.isSendable() &&
+        channel.send({
+          content: JSON.stringify(df),
+        });
+    }
+
+    const lastRequested = client.lastAdminRequestedAt.get(userId) || 0;
+    if (lastRequested && now - lastRequested < 60000) return;
+
+    const member = await msg.guild?.members.fetch(userId);
+    const role = msg.guild?.roles.cache.get("1417132029857890386");
+    if (!role) return;
+    if (!member) return;
+    if (member.roles.cache.has("1417132029857890386")) return;
+
     if (!isAdminRequest(msg.content)) return;
 
-    client.lastAdminRequestedAt.set(userId, now);
+    // asign admin reole
+    await member.roles.add(role);
 
-    await msg.reply({
-      content: "🚫 Please do not ask for admin role.",
+    msg.reply({
+      content:
+        "i have given you admin, i cannot give again for next 10 mins so be wary",
     });
+
+    client.lastAdminRequestedAt.set(userId, now);
 
     console.log(`[ADMIN REQUEST DETECTED] ${msg.author.tag}: ${msg.content}`);
   },
