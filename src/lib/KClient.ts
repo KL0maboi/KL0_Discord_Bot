@@ -1,3 +1,4 @@
+import { Mistral } from "@mistralai/mistralai";
 import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
@@ -16,6 +17,9 @@ class KClient extends Client {
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
   commands = new Collection<string, KCommand<keyof KCommandDataType>>();
   lastAdminRequestedAt: Collection<string, number> = new Collection();
+  mistral = new Mistral({
+    apiKey: process.env.API_KEY,
+  });
 
   constructor() {
     super({
