@@ -12,7 +12,7 @@ export default {
 
     const res = (await client.mistral.beta.conversations.start({
       agentId: process.env.AGENT_ID!,
-      agentVersion: 2,
+      agentVersion: process.env.AGENT_VERSION!,
       inputs: [{ role: "user", content }],
     })) as any;
 
