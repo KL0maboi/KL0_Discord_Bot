@@ -25,7 +25,7 @@ class KClient extends Client {
   constructor() {
     super({
       presence: {
-        status: "invisible",
+        // status: "invisible",
       },
       intents: [
         IntentsBitField.Flags.Guilds,
@@ -39,13 +39,13 @@ class KClient extends Client {
     this.loadCommands();
   }
 
-  loadEvents() {
+  async loadEvents() {
     const eventFiles = readdirSync(join(__dirname, "../events"));
 
     for (const file of eventFiles) {
-      const event: KEventHandle<keyof ClientEvents> = require(
-        `../events/${file}`,
-      ).default;
+      const event: KEventHandle<keyof ClientEvents> = (await import(
+        `../events/${file}`
+      )).default;
 
       if (event.once) {
         this.once(event.name, (...args) => event.execute(this, ...args));
@@ -55,7 +55,7 @@ class KClient extends Client {
     }
   }
 
-  loadCommands() {
+  async loadCommands() {
     const path = join(__dirname, "../commands");
     const categories = readdirSync(path);
 
@@ -65,7 +65,7 @@ class KClient extends Client {
 
       for (const command of commands) {
         const cmdPath = join(dirPath, command);
-        const cmdData: KCommand<keyof KCommandType> = require(cmdPath).default;
+        const cmdData: KCommand<keyof KCommandType> = (await import(cmdPath)).default;
 
         const data = cmdData.data;
 
