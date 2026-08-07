@@ -37,9 +37,12 @@ const client = new KClient();
       }
     }
 
-    await rest.put(Routes.applicationCommands(CLIENT_ID), {
-      body: [...body.values()],
-    });
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, process.env.GUILD_ID!),
+      {
+        body: [...body.values()],
+      },
+    );
 
     console.log("Successfully reloaded application (/) commands.");
   } catch (error) {

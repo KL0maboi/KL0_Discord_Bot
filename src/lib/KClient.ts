@@ -14,6 +14,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 class KClient extends Client {
+  deadUsers = new Set<string>();
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
   commands = new Collection<string, KCommand<keyof KCommandDataType>>();
   lastAdminRequestedAt: Collection<string, number> = new Collection();
@@ -30,6 +31,7 @@ class KClient extends Client {
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
+        IntentsBitField.Flags.GuildVoiceStates,
       ],
     });
 
