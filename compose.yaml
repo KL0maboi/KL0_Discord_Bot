@@ -3,5 +3,6 @@ services:
     build: .
     ports:
       - "${PORT}:9000"
+    restart: on-failure
     env_file:
       - .env
