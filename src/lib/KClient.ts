@@ -40,6 +40,14 @@ const ELIGIBLE_NAME_GOD_USERS = [
   "880410152304521226", // VANDHI
 ];
 
+mkdirSync(join(__dirname, "../data/"), { recursive: true });
+
+if (!existsSync(join(__dirname, "../data/data.json")))
+  writeFileSync(
+    join(__dirname, "../data/data.json"),
+    JSON.stringify({ lastSwappedNameGod: 0 }),
+  );
+
 class KClient extends Client {
   deadUsers = new Set<string>();
   eventHandles = new Collection<string, KEventHandle<keyof ClientEvents>>();
@@ -65,14 +73,6 @@ class KClient extends Client {
         IntentsBitField.Flags.GuildVoiceStates,
       ],
     });
-
-    mkdirSync(join(__dirname, "../data/"), { recursive: true });
-
-    if (!existsSync(join(__dirname, "../data/data.json")))
-      writeFileSync(
-        join(__dirname, "../data/data.json"),
-        JSON.stringify({ lastSwappedNameGod: 0 }),
-      );
 
     this.loadEvents();
     this.loadCommands();
