@@ -1,5 +1,11 @@
 import { Mistral } from "@mistralai/mistralai";
-import { readFileSync, writeFileSync } from "fs";
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  existsSync,
+  mkdirSync,
+} from "fs";
 import { join } from "path";
 import {
   AutocompleteInteraction,
@@ -12,7 +18,6 @@ import {
   IntentsBitField,
   SlashCommandBuilder,
 } from "discord.js";
-import { readdirSync } from "node:fs";
 
 type persistantDataJson = {
   lastSwappedNameGod: number;
@@ -34,6 +39,14 @@ const ELIGIBLE_NAME_GOD_USERS = [
   "1036176085206970418", // SOTTA
   "880410152304521226", // VANDHI
 ];
+
+mkdirSync(join(__dirname, "../data/"), { recursive: true });
+
+if (!existsSync(join(__dirname, "../data/data.json")))
+  writeFileSync(
+    join(__dirname, "../data/data.json"),
+    JSON.stringify({ lastSwappedNameGod: 0 }),
+  );
 
 class KClient extends Client {
   deadUsers = new Set<string>();
